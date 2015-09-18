@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 
 // Some variables you can play with :-)
@@ -53,6 +54,13 @@ int main(int argc, char* argv[]) {
 		&window_attr                        // attributes
 	);
 	XMapWindow(display, window);
+	XStoreName(display, window, "find-cursor");
+
+	XClassHint *class = XAllocClassHint();
+	class->res_name = "find-cursor";
+	class->res_class = "find-cursor";
+	XSetClassHint(display, window, class);
+	XFree(class);
 
 	// Keep the window on top
 	XEvent e;
@@ -90,7 +98,7 @@ int main(int argc, char* argv[]) {
 		XSync(display, False);
 		usleep(speed * 100);
 	}
-
+	XFreeGC(display, gc);
 	XCloseDisplay(display);
 }
 
