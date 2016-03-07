@@ -1,31 +1,119 @@
 /*
  * http://code.arp242.net/find-cursor
- * Copyright © 2015 Martin Tournoij <martin@arp242.net>
+ * Copyright © 2015-2016 Martin Tournoij <martin@arp242.net>
  * See below for full copyright
  */
 
-#include <stdlib.h>
+#include <getopt.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
+#include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/Xdamage.h>
+#include <X11/extensions/Xrender.h>
+#include <X11/extensions/shape.h>
 
-// Some variables you can play with :-)
-int size = 220;
-int step = 40;
-int speed = 400;
-int line_width = 2;
-char color_name[] = "black";
+
+void usage(char *name);
+int get_num(int ch, char *opt, char *name);
+void draw(char *name, int size, int step, int speed, int line_width, char *color_name);
+
+
+static struct option longopts[] = { 
+	{"help",          no_argument,       NULL, 'h'},
+	{"size",          required_argument, NULL, 's'},
+	{"step",          required_argument, NULL, 't'},
+	{"speed",         required_argument, NULL, 'p'},
+	{"line-width",    required_argument, NULL, 'l'},
+	{"color",         required_argument, NULL, 'c'},
+	{NULL, 0, NULL, 0}
+}; 
+
+
+void usage(char *name) {
+	printf("Usage: %s [-stplc]\n\n", name);
+	printf("  -h, --help          Show this help.\n");
+	printf("  -s, --size          Size in pixels.\n");
+	printf("  -t, --step          ???.\n");
+	printf("  -p, --speed         Animation speed.\n");
+	printf("  -l, --line-width    Width of the lines in pixels.\n");
+	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex (i.e. #ff0055).\n");
+	printf("\n");
+	printf("The defaults:\n");
+	printf("  %s --size 220 --step 40 --speed 400 --line-width 2 --color black\n", name);
+	printf("Draw a circle\n");
+	printf("  %s --size 100 --step 1 --speed 20 --line-width 1 --color black\n", name);
+	printf("\n");
+}
+
+
+int get_num(int ch, char *opt, char *name) {
+	char *end;
+	long result = strtol(optarg, &end, 10);
+	if (*end) {
+		fprintf(stderr, "%s: %d must be a number\n", name, ch);
+		usage(name);
+		exit(1);
+	}
+	return result;
+}
 
 
 int main(int argc, char* argv[]) {
+	// Parse options
+	int size = 220;
+	int step = 40;
+	int speed = 400;
+	int line_width = 2;
+	char color_name[64] = "black";
+
+	int ch;
+	while ((ch = getopt_long(argc, argv, "hs:t:p:l:c:r:", longopts, NULL)) != -1)
+		switch (ch) {
+		case 's':
+			size = get_num(ch, optarg, argv[0]);
+			break;
+		case 't':
+			step = get_num(ch, optarg, argv[0]);
+			break;
+		case 'p':
+			speed = get_num(ch, optarg, argv[0]);
+			break;
+		case 'l':
+			line_width = get_num(ch, optarg, argv[0]);
+			break;
+		case 'c':
+			strncpy(color_name, optarg, sizeof(color_name));
+			printf("c: %s\n", color_name);
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(0);
+		default:
+			fprintf(stderr, "%s: Unknown option: %c\n", argv[0], (char) ch);
+			usage(argv[0]);
+			exit(1);
+		}
+	argc -= optind; 
+	argv += optind;
+
+	draw(argv[0], size, step, speed, line_width, color_name);
+}
+
+
+void draw(char *name, int size, int step, int speed, int line_width, char *color_name) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
 	if (!display_name) {
-		fprintf(stderr, "%s: cannot connect to X server '%s'\n", argv[0], display_name);
+		fprintf(stderr, "%s: cannot connect to X server '%s'\n", name, display_name);
 		exit(1);
 	}
 
@@ -74,6 +162,15 @@ int main(int argc, char* argv[]) {
 	e.xclient.data.l[1] = XInternAtom(display, "_NET_WM_STATE_STAYS_ON_TOP", False);
 	XSendEvent(display, XRootWindow(display, screen), False, SubstructureRedirectMask, &e);
 
+	// Setting this makes sure compositing window managers don't apply
+	// shadows and such
+	// https://specifications.freedesktop.org/wm-spec/1.4/ar01s05.html
+	// https://wiki.archlinux.org/index.php/Compton
+	Atom type_util = XInternAtom(display, "_NET_WM_WINDOW_TYPE", 0);
+	Atom type = XInternAtom(display, "_NET_WM_WINDOW_TYPE_MENU", 0);
+	XChangeProperty(display, window, type,
+		XA_ATOM, 32, PropModeReplace, (unsigned char *)&type_util, 1);
+
 	XRaiseWindow(display, window);
 	XFlush(display);
 
@@ -106,7 +203,7 @@ int main(int argc, char* argv[]) {
 /*
  *  The MIT License (MIT)
  * 
- *  Copyright © 2015 Martin Tournoij
+ *  Copyright © 2015-2016 Martin Tournoij
  * 
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
