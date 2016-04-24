@@ -1,3 +1,7 @@
+Project status: stable
+
+-----------------------------------------
+
 Simple XLib program to highlight the cursor position. This is similar to the
 feature found in Windows XP (and possibly later?)
 
