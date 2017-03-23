@@ -5,12 +5,12 @@ Project status: stable
 Simple XLib program to highlight the cursor position. This is similar to the
 feature found in Windows XP (and possibly later?)
 
-![screenshot.gif](https://bytebucket.org/Carpetsmoker/find-cursor/raw/tip/screenshot.gif)
+![screenshot.gif](https://raw.githubusercontent.com/Carpetsmoker/find-cursor/master/screenshot.gif)
 
 Using it
 ========
-Compile it by typing `make`. Run it with `-h` for some options controlling the
-appearance.
+Compile it by typing `make`. Run it with `-h` to see some options for
+controlling the appearance.
 
 - The author runs it with [`xcape`][xcape]:
 
