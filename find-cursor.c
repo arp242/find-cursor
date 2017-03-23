@@ -1,6 +1,6 @@
 /*
  * http://code.arp242.net/find-cursor
- * Copyright © 2015-2016 Martin Tournoij <martin@arp242.net>
+ * Copyright © 2015-2017 Martin Tournoij <martin@arp242.net>
  * See below for full copyright
  */
 
@@ -11,21 +11,16 @@
 #include <string.h>
 #include <unistd.h>
 
-
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
-
-#include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/Xdamage.h>
 #include <X11/extensions/Xrender.h>
 #include <X11/extensions/shape.h>
 
-
 void usage(char *name);
-int get_num(int ch, char *opt, char *name);
+int parse_num(int ch, char *opt, char *name);
 void draw(char *name, int size, int step, int speed, int line_width, char *color_name);
-
 
 static struct option longopts[] = { 
 	{"help",          no_argument,       NULL, 'h'},
@@ -36,7 +31,6 @@ static struct option longopts[] = {
 	{"color",         required_argument, NULL, 'c'},
 	{NULL, 0, NULL, 0}
 }; 
-
 
 void usage(char *name) {
 	printf("Usage: %s [-stplc]\n\n", name);
@@ -54,8 +48,8 @@ void usage(char *name) {
 	printf("\n");
 }
 
-
-int get_num(int ch, char *opt, char *name) {
+// Parse number from commandline, or show error and exit if it's not a number.
+int parse_num(int ch, char *opt, char *name) {
 	char *end;
 	long result = strtol(optarg, &end, 10);
 	if (*end) {
@@ -79,20 +73,19 @@ int main(int argc, char* argv[]) {
 	while ((ch = getopt_long(argc, argv, "hs:t:p:l:c:r:", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
-			size = get_num(ch, optarg, argv[0]);
+			size = parse_num(ch, optarg, argv[0]);
 			break;
 		case 't':
-			step = get_num(ch, optarg, argv[0]);
+			step = parse_num(ch, optarg, argv[0]);
 			break;
 		case 'p':
-			speed = get_num(ch, optarg, argv[0]);
+			speed = parse_num(ch, optarg, argv[0]);
 			break;
 		case 'l':
-			line_width = get_num(ch, optarg, argv[0]);
+			line_width = parse_num(ch, optarg, argv[0]);
 			break;
 		case 'c':
 			strncpy(color_name, optarg, sizeof(color_name));
-			printf("c: %s\n", color_name);
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -108,7 +101,6 @@ int main(int argc, char* argv[]) {
 	draw(argv[0], size, step, speed, line_width, color_name);
 }
 
-
 void draw(char *name, int size, int step, int speed, int line_width, char *color_name) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
@@ -119,6 +111,12 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 
 	Display *display = XOpenDisplay(display_name);
 	int screen = DefaultScreen(display);
+
+	int shape_event_base, shape_error_base;
+	if (!XShapeQueryExtension(display, &shape_event_base, &shape_error_base)) {
+		fprintf(stderr, "%s: no XShape extension for display '%s'\n", name, display_name);
+		exit(1);
+	}
 
 	// Get the mouse cursor position
 	int win_x, win_y, root_x, root_y = 0;
@@ -134,13 +132,37 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 	Window window = XCreateWindow(display, XRootWindow(display, screen),
 		root_x - size/2, root_y - size/2,   // x, y position
 		size, size,                         // width, height
-		0,                                  // border width
+		4,                                  // border width
 		DefaultDepth(display, screen),      // depth
 		CopyFromParent,                     // class
 		DefaultVisual(display, screen),     // visual
 		CWOverrideRedirect,                 // valuemask
 		&window_attr                        // attributes
 	);
+
+	// Make round shaped window.
+	XGCValues xgcv;
+	Pixmap shape_mask = XCreatePixmap(display, window, size, size, 1);
+	GC part_shape = XCreateGC(display, shape_mask, 0, &xgcv);
+	XSetForeground(display, part_shape, 0);
+	XFillRectangle(display, shape_mask, part_shape, 0, 0, size, size);
+	XSetForeground(display, part_shape, 1);
+	XFillArc(display, shape_mask, part_shape,
+		0, 0,         // x, y position
+		size, size,   // Size
+		0, 360 * 64); // Make it a full circle
+
+	XShapeCombineMask(display, window, ShapeBounding, 0,0, shape_mask, ShapeSet);
+	XShapeCombineMask(display, window, ShapeClip, 0,0, shape_mask, ShapeSet);
+	XFreePixmap(display, shape_mask);
+
+	// Input region is small so we can pass input events.
+	XRectangle rect;
+	XserverRegion region = XFixesCreateRegion(display, &rect, 1);
+	XFixesSetWindowShapeRegion(display, window, ShapeInput, 0, 0, region);
+	XFixesDestroyRegion(display, region);
+
+	// Set attrs
 	XMapWindow(display, window);
 	XStoreName(display, window, "find-cursor");
 
@@ -162,14 +184,13 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 	e.xclient.data.l[1] = XInternAtom(display, "_NET_WM_STATE_STAYS_ON_TOP", False);
 	XSendEvent(display, XRootWindow(display, screen), False, SubstructureRedirectMask, &e);
 
-	// Setting this makes sure compositing window managers don't apply
-	// shadows and such
+	// Make sure compositing window managers don't apply shadows and such.
 	// https://specifications.freedesktop.org/wm-spec/1.4/ar01s05.html
 	// https://wiki.archlinux.org/index.php/Compton
 	Atom type_util = XInternAtom(display, "_NET_WM_WINDOW_TYPE", 0);
 	Atom type = XInternAtom(display, "_NET_WM_WINDOW_TYPE_MENU", 0);
-	XChangeProperty(display, window, type,
-		XA_ATOM, 32, PropModeReplace, (unsigned char *)&type_util, 1);
+	XChangeProperty(display, window, type, XA_ATOM, 32, PropModeReplace,
+		(unsigned char *)&type_util, 1);
 
 	XRaiseWindow(display, window);
 	XFlush(display);
@@ -195,6 +216,7 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 		XSync(display, False);
 		usleep(speed * 100);
 	}
+
 	XFreeGC(display, gc);
 	XCloseDisplay(display);
 }
@@ -202,19 +224,19 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 
 /*
  *  The MIT License (MIT)
- * 
- *  Copyright © 2015-2016 Martin Tournoij
- * 
+ *
+ *  Copyright © 2015-2017 Martin Tournoij
+ *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
  *  deal in the Software without restriction, including without limitation the
  *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  *  sell copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
- * 
+ *
  *  The above copyright notice and this permission notice shall be included in
  *  all copies or substantial portions of the Software.
- * 
+ *
  *  The software is provided "as is", without warranty of any kind, express or
  *  implied, including but not limited to the warranties of merchantability,
  *  fitness for a particular purpose and noninfringement. In no event shall the
