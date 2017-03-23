@@ -1,4 +1,5 @@
 [![This project is considered stable](https://img.shields.io/badge/Status-stable-green.svg)](https://arp242.net/status/stable)
+[![Build Status](https://travis-ci.org/Carpetsmoker/find-cursor.svg?branch=master)](https://travis-ci.org/Carpetsmoker/find-cursor)
 
 Simple XLib program to highlight the cursor position. This is similar to the
 feature found in Windows XP (and possibly later?)
