@@ -4,3 +4,5 @@ script: make
 compiler:
   - clang
   - gcc
+notifications:
+  email: false

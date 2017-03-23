@@ -207,7 +207,8 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 	XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
 
 	// Draw the circles
-	for (int i=1; i<=size; i+=step) { 
+	int i = 1;
+	for (i=1; i<=size; i+=step) { 
 		XDrawArc(display, window, gc,
 			size/2 - i/2, size/2 - i/2,   // x, y position
 			i, i,                         // Size
