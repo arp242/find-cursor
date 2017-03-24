@@ -26,5 +26,17 @@ controlling the appearance.
 	I'm sure you can figure out how to use it with your WM ;-) You can also use
 	[`xbindkeys`](xbindkeys), which should work with `$any` window manager.
 
+- You may want to disable shadows if you use compton or some other composite
+  manager; for example for compton start it with:
+
+		compton --shadow-exclude "class_g = 'find-cursor'"
+
+	Or, perhaps even better, disable it for all shaped windows:
+
+		compton --shadow-exclude 'bounding_shaped'
+
+	You can also put that in the compton config file. Other managers might have
+	different options/flags.
+
 [xcape]: https://github.com/alols/xcape
 [xbindkeys]: http://www.nongnu.org/xbindkeys/xbindkeys.html
