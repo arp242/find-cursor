@@ -214,6 +214,11 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 			i, i,                         // Size
 			0, 360 * 64);                 // Make it a full circle
 
+		XQueryPointer(display, XRootWindow(display, screen),
+			&child_win, &root_win,
+			&root_x, &root_y, &win_x, &win_y, &mask);
+		XMoveWindow(display, window, root_x - size/2, root_y - size/2);
+
 		XSync(display, False);
 		usleep(speed * 100);
 	}
