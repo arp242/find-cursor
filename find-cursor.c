@@ -126,17 +126,22 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 		&child_win, &root_win,
 		&root_x, &root_y, &win_x, &win_y, &mask);
 
+	XVisualInfo vinfo;
+	XMatchVisualInfo(display, DefaultScreen(display), 32, TrueColor, &vinfo);
+
 	// Create a window at the mouse position
 	XSetWindowAttributes window_attr;
 	window_attr.override_redirect = 1;
+	window_attr.colormap = XCreateColormap(display, DefaultRootWindow(display), vinfo.visual, AllocNone);
+	window_attr.background_pixel = 0;
 	Window window = XCreateWindow(display, XRootWindow(display, screen),
 		root_x - size/2, root_y - size/2,   // x, y position
 		size, size,                         // width, height
 		4,                                  // border width
-		DefaultDepth(display, screen),      // depth
+		vinfo.depth,			    // depth
 		CopyFromParent,                     // class
-		DefaultVisual(display, screen),     // visual
-		CWOverrideRedirect,                 // valuemask
+		vinfo.visual,			    // visual
+		CWColormap | CWBorderPixel | CWBackPixel | CWOverrideRedirect,                 // valuemask
 		&window_attr                        // attributes
 	);
 
@@ -208,7 +213,8 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 
 	// Draw the circles
 	int i = 1;
-	for (i=1; i<=size; i+=step) { 
+	for (i=1; i<=size; i+=step) {
+	       	XClearWindow(display, window);	
 		XDrawArc(display, window, gc,
 			size/2 - i/2, size/2 - i/2,   // x, y position
 			i, i,                         // Size
