@@ -20,13 +20,13 @@
 
 void usage(char *name);
 int parse_num(int ch, char *opt, char *name);
-void draw(char *name, int size, int step, int speed, int line_width, char *color_name);
+void draw(char *name, int size, int distance, int wait, int line_width, char *color_name);
 
 static struct option longopts[] = { 
 	{"help",          no_argument,       NULL, 'h'},
 	{"size",          required_argument, NULL, 's'},
-	{"step",          required_argument, NULL, 't'},
-	{"speed",         required_argument, NULL, 'p'},
+	{"distance",      required_argument, NULL, 'd'},
+	{"wait",          required_argument, NULL, 'w'},
 	{"line-width",    required_argument, NULL, 'l'},
 	{"color",         required_argument, NULL, 'c'},
 	{NULL, 0, NULL, 0}
@@ -35,16 +35,16 @@ static struct option longopts[] = {
 void usage(char *name) {
 	printf("Usage: %s [-stplc]\n\n", name);
 	printf("  -h, --help          Show this help.\n");
-	printf("  -s, --size          Size in pixels.\n");
-	printf("  -t, --step          ???.\n");
-	printf("  -p, --speed         Animation speed.\n");
+	printf("  -s, --size          Maximum size the circle will grow to in pixels.\n");
+	printf("  -d, --distance      Distance between the circles in pixels.\n");
 	printf("  -l, --line-width    Width of the lines in pixels.\n");
+	printf("  -w, --wait          Time to wait before drawing the next circle in microseconds.\n");
 	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex (i.e. #ff0055).\n");
 	printf("\n");
 	printf("The defaults:\n");
-	printf("  %s --size 220 --step 40 --speed 400 --line-width 2 --color black\n", name);
+	printf("  %s --size 220 --distance 40 --wait 400 --line-width 2 --color black\n", name);
 	printf("Draw a circle\n");
-	printf("  %s --size 100 --step 1 --speed 20 --line-width 1 --color black\n", name);
+	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1 --color black\n", name);
 	printf("\n");
 }
 
@@ -64,22 +64,22 @@ int parse_num(int ch, char *opt, char *name) {
 int main(int argc, char* argv[]) {
 	// Parse options
 	int size = 220;
-	int step = 40;
-	int speed = 400;
+	int distance = 40;
+	int wait = 400;
 	int line_width = 2;
 	char color_name[64] = "black";
 
 	int ch;
-	while ((ch = getopt_long(argc, argv, "hs:t:p:l:c:r:", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
 			size = parse_num(ch, optarg, argv[0]);
 			break;
-		case 't':
-			step = parse_num(ch, optarg, argv[0]);
+		case 'd':
+			distance = parse_num(ch, optarg, argv[0]);
 			break;
-		case 'p':
-			speed = parse_num(ch, optarg, argv[0]);
+		case 'w':
+			wait = parse_num(ch, optarg, argv[0]);
 			break;
 		case 'l':
 			line_width = parse_num(ch, optarg, argv[0]);
@@ -91,17 +91,16 @@ int main(int argc, char* argv[]) {
 			usage(argv[0]);
 			exit(0);
 		default:
-			fprintf(stderr, "%s: Unknown option: %c\n", argv[0], (char) ch);
 			usage(argv[0]);
 			exit(1);
 		}
 	argc -= optind; 
 	argv += optind;
 
-	draw(argv[0], size, step, speed, line_width, color_name);
+	draw(argv[0], size, distance, wait, line_width, color_name);
 }
 
-void draw(char *name, int size, int step, int speed, int line_width, char *color_name) {
+void draw(char *name, int size, int distance, int wait, int line_width, char *color_name) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
 	if (!display_name) {
@@ -208,14 +207,14 @@ void draw(char *name, int size, int step, int speed, int line_width, char *color
 
 	// Draw the circles
 	int i = 1;
-	for (i=1; i<=size; i+=step) { 
+	for (i=1; i<=size; i+=distance) { 
 		XDrawArc(display, window, gc,
 			size/2 - i/2, size/2 - i/2,   // x, y position
 			i, i,                         // Size
 			0, 360 * 64);                 // Make it a full circle
 
 		XSync(display, False);
-		usleep(speed * 100);
+		usleep(wait * 100);
 	}
 
 	XFreeGC(display, gc);
