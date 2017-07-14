@@ -8,7 +8,7 @@ feature found in Windows XP (and possibly later?)
 
 Using it
 ========
-Compile it by typing `make`. Run it with `-h` to see some options for
+Compile it by typing `make`. Run `find-cursor -h to see some options for
 controlling the appearance.
 
 - The author runs it with [`xcape`][xcape]:

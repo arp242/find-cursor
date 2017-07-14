@@ -45,8 +45,9 @@ void usage(char *name) {
 	printf("  -s, --size          Maximum size the circle will grow to in pixels.\n");
 	printf("  -d, --distance      Distance between the circles in pixels.\n");
 	printf("  -l, --line-width    Width of the lines in pixels.\n");
-	printf("  -w, --wait          Time to wait before drawing the next circle in microseconds.\n");
-	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex (i.e. #ff0055).\n");
+	printf("  -w, --wait          Time to wait before drawing the next circle in\n");
+	printf("                      microseconds.\n");
+	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex.\n");
 	printf("\n");
 	printf("Extra options:\n");
 	printf("  -f, --follow        Follow the cursor position as the cursor is moving.\n");
@@ -56,8 +57,10 @@ void usage(char *name) {
 	printf("                      it's disabled by default.\n");
 	printf("\n");
 	printf("Examples:\n");
-	printf("  Defaults: %s --size 220 --distance 40 --wait 400 --line-width 2 --color black\n", name);
-	printf("  Circle:   %s --size 100 --distance 1 --wait 20 --line-width 1 --color black\n", name);
+	printf("  The defaults:\n");
+	printf("  %s --size 220 --distance 40 --wait 400 --line-width 2 --color black\n\n", name);
+	printf("  Draw a solid circle:\n");
+	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1 --color black\n", name);
 	printf("\n");
 }
 
