@@ -23,7 +23,7 @@ int parse_num(int ch, char *opt, char *name);
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent);
+	int follow, int transparent, int grow);
 
 static struct option longopts[] = { 
 	{"help",          no_argument,       NULL, 'h'},
@@ -34,11 +34,12 @@ static struct option longopts[] = {
 	{"color",         required_argument, NULL, 'c'},
 	{"follow",        no_argument,       NULL, 'f'},
 	{"transparent",   no_argument,       NULL, 't'},
+	{"grow",          no_argument,       NULL, 'g'},
 	{NULL, 0, NULL, 0}
 }; 
 
 void usage(char *name) {
-	printf("Usage: %s [-stplc]\n\n", name);
+	printf("Usage: %s [-stplcftg]\n\n", name);
 	printf("  -h, --help          Show this help.\n");
 	printf("\n");
 	printf("Shape options:\n");
@@ -48,6 +49,7 @@ void usage(char *name) {
 	printf("  -w, --wait          Time to wait before drawing the next circle in\n");
 	printf("                      microseconds.\n");
 	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex.\n");
+	printf("  -g, --grow          Grow the animation in size, rather than shrinking it.\n");
 	printf("\n");
 	printf("Extra options:\n");
 	printf("  -f, --follow        Follow the cursor position as the cursor is moving.\n");
@@ -58,9 +60,9 @@ void usage(char *name) {
 	printf("\n");
 	printf("Examples:\n");
 	printf("  The defaults:\n");
-	printf("  %s --size 220 --distance 40 --wait 400 --line-width 2 --color black\n\n", name);
+	printf("  %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
 	printf("  Draw a solid circle:\n");
-	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1 --color black\n", name);
+	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1\n", name);
 	printf("\n");
 }
 
@@ -79,16 +81,17 @@ int parse_num(int ch, char *opt, char *name) {
 
 int main(int argc, char* argv[]) {
 	// Parse options
-	int size = 220;
+	int size = 320;
 	int distance = 40;
 	int wait = 400;
-	int line_width = 2;
+	int line_width = 4;
 	char color_name[64] = "black";
 	int follow = 0;
 	int transparent = 0;
+	int grow = 0;
 
 	int ch;
-	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ft", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftg", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
 			size = parse_num(ch, optarg, argv[0]);
@@ -114,6 +117,9 @@ int main(int argc, char* argv[]) {
 		case 't':
 			transparent = 1;
 			break;
+		case 'g':
+			grow = 1;
+			break;
 		default:
 			usage(argv[0]);
 			exit(1);
@@ -123,13 +129,13 @@ int main(int argc, char* argv[]) {
 
 	draw(argv[0],
 		size, distance, wait, line_width, color_name,
-		follow, transparent);
+		follow, transparent, grow);
 }
 
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent
+	int follow, int transparent, int grow
 ) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
@@ -262,9 +268,15 @@ void draw(
 			XClearWindow(display, window);
 		}
 
+		int cs;
+		if (grow)
+			cs = i;
+		else
+			cs = size - i;
+
 		XDrawArc(display, window, gc,
-			size/2 - i/2, size/2 - i/2,   // x, y position
-			i, i,                         // Size
+			size/2 - cs/2, size/2 - cs/2, // x, y position
+			cs, cs,                       // Size
 			0, 360 * 64);                 // Make it a full circle
 
 		if (follow) {
