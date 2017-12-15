@@ -4,6 +4,8 @@
  * See below for full copyright
  */
 
+#define _XOPEN_SOURCE 500
+
 #include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
