@@ -25,7 +25,7 @@ int parse_num(int ch, char *opt, char *name);
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int inverted);
+	int follow, int transparent, int grow, int outline);
 
 static struct option longopts[] = { 
 	{"help",          no_argument,       NULL, 'h'},
@@ -37,7 +37,7 @@ static struct option longopts[] = {
 	{"follow",        no_argument,       NULL, 'f'},
 	{"transparent",   no_argument,       NULL, 't'},
 	{"grow",          no_argument,       NULL, 'g'},
-	{"inverted",      no_argument,       NULL, 'i'},
+	{"outline",       no_argument,       NULL, 'o'},
 	{NULL, 0, NULL, 0}
 }; 
 
@@ -60,8 +60,8 @@ void usage(char *name) {
 	printf("                      some display issues when following the cursor position,\n");
 	printf("                      but it doesn't work well with all WMs, which is why\n");
 	printf("                      it's disabled by default.\n");
-	printf("  -i, --inverted      Draw the inverted of the given color additionally\n");
-	printf("                      to see the circles on all backgrounds\n");
+	printf("  -o, --outline       Draw an outline in the opposite color as well. Helps\n");
+	printf("                      visibility on all backgrounds.\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("  The defaults:\n");
@@ -94,10 +94,10 @@ int main(int argc, char* argv[]) {
 	int follow = 0;
 	int transparent = 0;
 	int grow = 0;
-	int inverted = 0;
+	int outline = 0;
 
 	int ch;
-	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftgi", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftgo", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
 			size = parse_num(ch, optarg, argv[0]);
@@ -126,8 +126,8 @@ int main(int argc, char* argv[]) {
 		case 'g':
 			grow = 1;
 			break;
-		case 'i':
-			inverted = 1;
+		case 'o':
+			outline = 1;
 			break;
 		default:
 			usage(argv[0]);
@@ -138,13 +138,13 @@ int main(int argc, char* argv[]) {
 
 	draw(argv[0],
 		size, distance, wait, line_width, color_name,
-		follow, transparent, grow, inverted);
+		follow, transparent, grow, outline);
 }
 
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int inverted
+	int follow, int transparent, int grow, int outline
 ) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
@@ -270,16 +270,15 @@ void draw(
 
 	XColor color2;
 	char color2_name[14]; // hash + 3x4-digit hex
-	if (inverted) {
-		// invert
+	if (outline) {
+		// Insert and convert to XColor.
 		color2.red   = 65535 - color.red;
 		color2.green = 65535 - color.green;
 		color2.blue  = 65535 - color.blue;
-		// convert to XColor
 		sprintf(color2_name,"#%04X%04X%04X", color2.red,color2.green, color2.blue);
 		XAllocNamedColor(display, colormap, color2_name, &color2, &color2);
 	} else {
-		// if not inverted - set color only once
+		// Set colour only once if not outline.
 		XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
 		XSetForeground(display, gc, color.pixel);
 	}
@@ -297,7 +296,7 @@ void draw(
 		else
 			cs = size - i;
 
-		if (inverted) {
+		if (outline) {
 			XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
 			XSetForeground(display, gc, color2.pixel);
 			XDrawArc(display, window, gc,
@@ -305,7 +304,7 @@ void draw(
 				cs, cs,                       // Size
 				0, 360 * 64);                 // Make it a full circle
 
-			//set color back for the normal circle
+			// Set color back for the normal circle.
 			XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
 			XSetForeground(display, gc, color.pixel);
 		}
