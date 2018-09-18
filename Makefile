@@ -1,8 +1,11 @@
 CC?=cc
 CFLAGS?=-std=c99 -pedantic -Wall -Os
+STRIP?=strip
+PREFIX?=/usr
 
 all:
 	${CC} ${CFLAGS} -o find-cursor find-cursor.c -lX11 -lXext -lXfixes
 
 install:
-	install --strip -o root -g root find-cursor /bin/
+	$(STRIP) find-cursor
+	install -Dm755 find-cursor $(DESTDIR)$(PREFIX)/bin/find-cursor
