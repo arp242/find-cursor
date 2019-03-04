@@ -6,37 +6,51 @@ feature found in Windows XP (and possibly later?)
 
 ![screenshot.gif](https://raw.githubusercontent.com/Carpetsmoker/find-cursor/master/screenshot.gif)
 
-Using it
-========
-Compile it by typing `make`. Run `find-cursor -h` to see some options for
-controlling the appearance.
+Installation
+============
 
-- The author runs it with [`xcape`][xcape]:
+Compile it by typing `make`, install it with `make install`. There are some
+packages:
 
-      xcape -e 'Control_L=Escape;Shift_L=KP_Add'
+- [FreeBSD](https://www.freshports.org/x11/find-cursor/)
+- [Void Linux](https://github.com/biopsin/void-packages/tree/master/srcpkgs/find-cursor)
 
-  When Left shift is tapped, a Keypad Add is sent – I don't have a numpad on my
-  keyboard – which we can then use to launch the program.
+Usage
+=====
 
-  I configured my window manager (PekWM) to pick up Numpad Add and launch this:
+See `find-cursor(1)` or `find-cursor -h` to see some options for controlling the
+appearance.
 
-      KeyPress = "KP_Add" { Actions = "Exec find-cursor" }
+Launching
+=========
 
-  I'm not going to include instructions for every window manager out there. I'm
-  sure you can figure out how to use it with your WM ;-) You can also use
-  [`xbindkeys`](xbindkeys), which should work with `$any` window manager.
+You will want to map a key in your window manager to run `find-cursor`. You can
+also use [`xbindkeys`](xbindkeys), which should work with `$any` window manager.
 
-- You may want to disable shadows if you use compton or some other composite
-  manager; for example for compton start it with:
+I run it with [`xcape`][xcape]:
 
-      compton --shadow-exclude "class_g = 'find-cursor'"
+	xcape -e 'Control_L=Escape;Shift_L=KP_Add'
 
-  Or, perhaps even better, disable it for all shaped windows:
+When `Left Shift` is tapped a `Keypad Add` is sent; I configured my window
+manager to launch `find-cursor` with that.
 
-      compton --shadow-exclude 'bounding_shaped'
+I don't have a numpad on my keyboard; you can also use `F13` or some other
+unused key.
 
-  You can also put that in the compton config file. Other managers might have
-  different options/flags.
+Compton
+=======
+
+You may want to disable shadows if you use compton or some other composite
+manager; for example for compton start it with:
+
+	compton --shadow-exclude "class_g = 'find-cursor'"
+
+Or, perhaps even better, disable it for all shaped windows:
+
+	compton --shadow-exclude 'bounding_shaped'
+
+You can also put that in the compton config file. Other managers might have
+different options/flags.
 
 [xcape]: https://github.com/alols/xcape
 [xbindkeys]: http://www.nongnu.org/xbindkeys/xbindkeys.html
