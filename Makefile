@@ -4,7 +4,7 @@ STRIP?=strip
 PREFIX?=/usr
 
 all:
-	${CC} ${CFLAGS} -o find-cursor find-cursor.c -lX11 -lXext -lXfixes
+	${CC} ${CFLAGS} ${LDFLAGS} -o find-cursor find-cursor.c -lX11 -lXext -lXfixes
 
 install:
 	$(STRIP) find-cursor
