@@ -149,7 +149,7 @@ void draw(
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
 	if (!display_name) {
-		fprintf(stderr, "%s: cannot connect to X server '%s'\n", name, display_name);
+		fprintf(stderr, "%s: DISPLAY not set\n", name);
 		exit(1);
 	}
 
