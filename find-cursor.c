@@ -133,7 +133,6 @@ int main(int argc, char* argv[]) {
 			usage(argv[0]);
 			exit(1);
 		}
-	argc -= optind; 
 	argv += optind;
 
 	draw(argv[0],
