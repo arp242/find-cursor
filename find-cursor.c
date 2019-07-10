@@ -133,7 +133,6 @@ int main(int argc, char* argv[]) {
 			usage(argv[0]);
 			exit(1);
 		}
-	argv += optind;
 
 	draw(argv[0],
 		size, distance, wait, line_width, color_name,
@@ -153,6 +152,10 @@ void draw(
 	}
 
 	Display *display = XOpenDisplay(display_name);
+	if (!display) {
+		fprintf(stderr, "%s: cannot open display '%s'\n", name, display_name);
+		exit(1);
+	}
 	int screen = DefaultScreen(display);
 
 	int shape_event_base, shape_error_base;
