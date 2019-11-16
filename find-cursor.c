@@ -69,7 +69,7 @@ void usage(char *name) {
 	printf("  The defaults:\n");
 	printf("  %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
 	printf("  Draw a solid circle:\n");
-	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1\n", name);
+	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
 	printf("  Constantly highlight the cursor:\n");
 	printf("  %s -r -c white -o -l1 -s10 -d1 -w1000 -ft\n", name);
 	printf("\n");
