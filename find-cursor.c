@@ -25,9 +25,9 @@ int parse_num(int ch, char *opt, char *name);
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline);
+	int follow, int transparent, int grow, int outline, int repeat);
 
-static struct option longopts[] = { 
+static struct option longopts[] = {
 	{"help",          no_argument,       NULL, 'h'},
 	{"size",          required_argument, NULL, 's'},
 	{"distance",      required_argument, NULL, 'd'},
@@ -38,8 +38,9 @@ static struct option longopts[] = {
 	{"transparent",   no_argument,       NULL, 't'},
 	{"grow",          no_argument,       NULL, 'g'},
 	{"outline",       no_argument,       NULL, 'o'},
+	{"repeat",        no_argument,       NULL, 'r'},
 	{NULL, 0, NULL, 0}
-}; 
+};
 
 void usage(char *name) {
 	printf("Usage: %s [-stplcftg]\n\n", name);
@@ -62,12 +63,15 @@ void usage(char *name) {
 	printf("                      it's disabled by default.\n");
 	printf("  -o, --outline       Draw an outline in the opposite color as well. Helps\n");
 	printf("                      visibility on all backgrounds.\n");
+	printf("  -r, --repeat        Repeat the animation indefinitely.\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("  The defaults:\n");
 	printf("  %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
 	printf("  Draw a solid circle:\n");
 	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1\n", name);
+	printf("  Constantly highlight the cursor:\n");
+	printf("  %s -r -c white -o -l1 -s10 -d1 -w1000 -ft\n", name);
 	printf("\n");
 }
 
@@ -95,6 +99,7 @@ int main(int argc, char* argv[]) {
 	int transparent = 0;
 	int grow = 0;
 	int outline = 0;
+	int repeat = 0;
 
 	int ch;
 	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftgo", longopts, NULL)) != -1)
@@ -129,6 +134,9 @@ int main(int argc, char* argv[]) {
 		case 'o':
 			outline = 1;
 			break;
+		case 'r':
+			repeat = 1;
+			break;
 		default:
 			usage(argv[0]);
 			exit(1);
@@ -136,13 +144,13 @@ int main(int argc, char* argv[]) {
 
 	draw(argv[0],
 		size, distance, wait, line_width, color_name,
-		follow, transparent, grow, outline);
+		follow, transparent, grow, outline, repeat);
 }
 
 void draw(
 	char *name,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline
+	int follow, int transparent, int grow, int outline, int repeat
 ) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
@@ -286,46 +294,56 @@ void draw(
 	}
 
 	// Draw the circles
-	int i = 1;
-	for (i=1; i<=size; i+=distance) { 
-		if (follow) {
-			XClearWindow(display, window);
-		}
+	const int size_cursor = 10;
+	do {
+		int i = 1;
+		for (i=1; i<=size; i+=distance) {
+			if (follow) {
+				XClearWindow(display, window);
+			}
 
-		int cs;
-		if (grow)
-			cs = i;
-		else
-			cs = size - i;
+			int cs;
+			if (grow)
+				cs = i;
+			else
+				cs = size - i;
 
-		if (outline) {
-			XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
-			XSetForeground(display, gc, color2.pixel);
+			if (outline) {
+				XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
+				XSetForeground(display, gc, color2.pixel);
+				XDrawArc(display, window, gc,
+					size/2 - cs/2, size/2 - cs/2, // x, y position
+					cs, cs,												// Size
+					0, 360 * 64);									// Make it a full circle
+
+				// Set color back for the normal circle.
+				XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
+				XSetForeground(display, gc, color.pixel);
+			}
+
 			XDrawArc(display, window, gc,
 				size/2 - cs/2, size/2 - cs/2, // x, y position
-				cs, cs,                       // Size
-				0, 360 * 64);                 // Make it a full circle
+				cs, cs,												// Size
+				0, 360 * 64);									// Make it a full circle
 
-			// Set color back for the normal circle.
-			XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
-			XSetForeground(display, gc, color.pixel);
+			if (follow) {
+				XQueryPointer(display, XRootWindow(display, screen),
+					&child_win, &root_win,
+					&root_x, &root_y, &win_x, &win_y, &mask);
+				XMoveWindow(
+					display, window,
+					// `size_cursor/2` is for the center of the circle to better
+					// match the pointer pixel of the cursor (which is especially
+					// noticable for small circles):
+					root_x - size/2 - size_cursor/2,
+					root_y - size/2 - size_cursor/2
+				);
+			}
+
+			XSync(display, False);
+			usleep(wait * 100);
 		}
-
-		XDrawArc(display, window, gc,
-			size/2 - cs/2, size/2 - cs/2, // x, y position
-			cs, cs,                       // Size
-			0, 360 * 64);                 // Make it a full circle
-
-		if (follow) {
-			XQueryPointer(display, XRootWindow(display, screen),
-				&child_win, &root_win,
-				&root_x, &root_y, &win_x, &win_y, &mask);
-			XMoveWindow(display, window, root_x - size/2, root_y - size/2);
-		}
-
-		XSync(display, False);
-		usleep(wait * 100);
-	}
+	} while (repeat);
 
 	XFreeGC(display, gc);
 	XCloseDisplay(display);
