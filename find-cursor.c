@@ -313,8 +313,8 @@ void draw(
 				XSetForeground(display, gc, color2.pixel);
 				XDrawArc(display, window, gc,
 					size/2 - cs/2, size/2 - cs/2, // x, y position
-					cs, cs,												// Size
-					0, 360 * 64);									// Make it a full circle
+					cs, cs,                       // Size
+					0, 360 * 64);                 // Make it a full circle
 
 				// Set color back for the normal circle.
 				XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
@@ -323,8 +323,8 @@ void draw(
 
 			XDrawArc(display, window, gc,
 				size/2 - cs/2, size/2 - cs/2, // x, y position
-				cs, cs,												// Size
-				0, 360 * 64);									// Make it a full circle
+				cs, cs,                       // Size
+				0, 360 * 64);                 // Make it a full circle
 
 			if (follow) {
 				XQueryPointer(display, XRootWindow(display, screen),
