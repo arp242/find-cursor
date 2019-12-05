@@ -1,10 +1,9 @@
 [![This project is considered stable](https://img.shields.io/badge/Status-stable-green.svg)](https://arp242.net/status/stable)
-[![Build Status](https://travis-ci.org/Carpetsmoker/find-cursor.svg?branch=master)](https://travis-ci.org/Carpetsmoker/find-cursor)
 
 Simple XLib program to highlight the cursor position. This is similar to the
 feature found in Windows XP (and possibly later?)
 
-![screenshot.gif](https://raw.githubusercontent.com/Carpetsmoker/find-cursor/master/screenshot.gif)
+![screenshot.gif](https://raw.githubusercontent.com/arp242/find-cursor/master/screenshot.gif)
 
 Installation
 ============
@@ -13,7 +12,7 @@ Compile it by typing `make`, install it with `make install`. There are some
 packages:
 
 - [FreeBSD](https://www.freshports.org/x11/find-cursor/)
-- [Void Linux](https://github.com/biopsin/void-packages/tree/master/srcpkgs/find-cursor)
+- [Void Linux](https://github.com/void-linux/void-packages/tree/master/srcpkgs/find-cursor)
 
 Usage
 =====
