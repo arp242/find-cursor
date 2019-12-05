@@ -180,13 +180,8 @@ void draw(
 	int size, int distance, int wait, int line_width, char *color_name,
 	int follow, int transparent, int grow, int outline, int repeat
 ) {
-	// Get the mouse cursor position
-	int win_x, win_y, root_x, root_y = 0;
-	unsigned int mask = 0;
-	Window child_win, root_win;
-	XQueryPointer(display, XRootWindow(display, screen),
-		&child_win, &root_win,
-		&root_x, &root_y, &win_x, &win_y, &mask);
+	// Get the mouse cursor position and size.
+	XFixesCursorImage *cursor = XFixesGetCursorImage(display);
 
 	// Create a window at the mouse position
 	Window window;
@@ -199,27 +194,27 @@ void draw(
 		window_attr.colormap = XCreateColormap(display, DefaultRootWindow(display), vinfo.visual, AllocNone);
 		window_attr.background_pixel = 0;
 		window = XCreateWindow(display, XRootWindow(display, screen),
-			root_x - size/2, root_y - size/2,   // x, y position
-			size, size,                         // width, height
-			4,                                  // border width
-			vinfo.depth,                        // depth
-			CopyFromParent,                     // class
-			vinfo.visual,                       // visual
+			cursor->x - size/2 - cursor->width/2,   // x position
+			cursor->y - size/2 - cursor->height/2,  // y position
+			size, size,                             // width, height
+			4,                                      // border width
+			vinfo.depth,                            // depth
+			CopyFromParent,                         // class
+			vinfo.visual,                           // visual
 			CWColormap | CWBorderPixel | CWBackPixel | CWOverrideRedirect, // valuemask
-			&window_attr                        // attributes
-		);
+			&window_attr);                          // attributes
 	}
 	else {
 		window = XCreateWindow(display, XRootWindow(display, screen),
-			root_x - size/2, root_y - size/2,   // x, y position
-			size, size,                         // width, height
-			4,                                  // border width
-			DefaultDepth(display, screen),      // depth
-			CopyFromParent,                     // class
-			DefaultVisual(display, screen),     // visual
-			CWOverrideRedirect,                 // valuemask
-			&window_attr                        // attributes
-		);
+			cursor->x - size/2 - cursor->width/2,  // x position
+			cursor->y - size/2 - cursor->height/2, // y position
+			size, size,                            // width, height
+			4,                                     // border width
+			DefaultDepth(display, screen),         // depth
+			CopyFromParent,                        // class
+			DefaultVisual(display, screen),        // visual
+			CWOverrideRedirect,                    // valuemask
+			&window_attr);                         // attributes
 	}
 
 	// Make round shaped window.
@@ -333,10 +328,10 @@ void draw(
 			0, 360 * 64);                 // Make it a full circle
 
 		if (follow) {
-			XQueryPointer(display, XRootWindow(display, screen),
-				&child_win, &root_win,
-				&root_x, &root_y, &win_x, &win_y, &mask);
-			XMoveWindow(display, window, root_x - size/2, root_y - size/2);
+			XFixesCursorImage *cursor = XFixesGetCursorImage(display);
+			XMoveWindow(display, window,
+					cursor->x - size/2 - cursor->width/2,
+					cursor->y - size/2 - cursor->height/2);
 		}
 
 		XSync(display, False);
