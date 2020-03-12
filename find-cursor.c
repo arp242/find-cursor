@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
 	int repeat = 0;
 
 	int ch;
-	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:rftgo", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftgo", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
 			size = parse_num(ch, optarg, argv[0]);
