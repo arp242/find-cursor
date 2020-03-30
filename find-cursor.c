@@ -1,6 +1,6 @@
 /*
  * http://code.arp242.net/find-cursor
- * Copyright © 2015-2017 Martin Tournoij <martin@arp242.net>
+ * Copyright © 2015-2020 Martin Tournoij <martin@arp242.net>
  * See below for full copyright
  */
 
@@ -22,8 +22,7 @@
 
 void usage(char *name);
 int parse_num(int ch, char *opt, char *name);
-void draw(
-	char *name, Display *display, int screen,
+void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
 	int follow, int transparent, int grow, int outline, int repeat);
 
@@ -43,7 +42,9 @@ static struct option longopts[] = {
 };
 
 void usage(char *name) {
-	printf("Usage: %s [-stplcftgr]\n\n", name);
+	printf("Usage: %s [-stplcftgr]\n", name);
+	printf("\n");
+	printf("Flags:\n");
 	printf("  -h, --help          Show this help.\n");
 	printf("\n");
 	printf("Shape options:\n");
@@ -51,8 +52,8 @@ void usage(char *name) {
 	printf("  -d, --distance      Distance between the circles in pixels.\n");
 	printf("  -l, --line-width    Width of the lines in pixels.\n");
 	printf("  -w, --wait          Time to wait before drawing the next circle in\n");
-	printf("                      microseconds.\n");
-	printf("  -c, --color         Color; can either be an X11 color name or RGB as hex.\n");
+	printf("                      tenths of milliseconds.\n");
+	printf("  -c, --color         Color as X11 color name or RGB (e.g. #ff0000)\n");
 	printf("  -g, --grow          Grow the animation in size, rather than shrinking it.\n");
 	printf("\n");
 	printf("Extra options:\n");
@@ -68,12 +69,11 @@ void usage(char *name) {
 	printf("\n");
 	printf("Examples:\n");
 	printf("  The defaults:\n");
-	printf("  %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
+	printf("    %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
 	printf("  Draw a solid circle:\n");
-	printf("  %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
+	printf("    %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
 	printf("  Always draw a full circle on top of the cursor:\n");
-	printf("  %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16", name);
-	printf("\n");
+	printf("    %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16\n", name);
 }
 
 // Parse number from commandline, or show error and exit if it's not a number.
@@ -87,7 +87,6 @@ int parse_num(int ch, char *opt, char *name) {
 	}
 	return result;
 }
-
 
 int main(int argc, char* argv[]) {
 	// Parse options
@@ -166,22 +165,29 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Actually draw.
-	do {
+	do
 		draw(argv[0], display, screen,
 			size, distance, wait, line_width, color_name,
 			follow, transparent, grow, outline, repeat);
-	} while (repeat == -1 || repeat--);
+	while (repeat == -1 || repeat--);
 
 	XCloseDisplay(display);
 }
 
-void draw(
-	char *name, Display *display, int screen,
+// Try to get the centre of the cursor.
+void cursor_center(Display *display, int size, int *x, int *y) {
+	XFixesCursorImage *c = XFixesGetCursorImage(display);
+	*x = c->x - size/2 - c->width/2  + c->xhot;
+	*y = c->y - size/2 - c->height/2 + c->yhot;
+}
+
+void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
 	int follow, int transparent, int grow, int outline, int repeat
 ) {
 	// Get the mouse cursor position and size.
-	XFixesCursorImage *cursor = XFixesGetCursorImage(display);
+	int center_x, center_y;
+	cursor_center(display, size, &center_x, &center_y);
 
 	// Create a window at the mouse position
 	Window window;
@@ -194,8 +200,8 @@ void draw(
 		window_attr.colormap = XCreateColormap(display, DefaultRootWindow(display), vinfo.visual, AllocNone);
 		window_attr.background_pixel = 0;
 		window = XCreateWindow(display, XRootWindow(display, screen),
-			cursor->x - size/2 - cursor->width/2,   // x position
-			cursor->y - size/2 - cursor->height/2,  // y position
+			center_x,                               // x position
+			center_y,                               // y position
 			size, size,                             // width, height
 			4,                                      // border width
 			vinfo.depth,                            // depth
@@ -204,10 +210,10 @@ void draw(
 			CWColormap | CWBorderPixel | CWBackPixel | CWOverrideRedirect, // valuemask
 			&window_attr);                          // attributes
 	}
-	else {
+	else
 		window = XCreateWindow(display, XRootWindow(display, screen),
-			cursor->x - size/2 - cursor->width/2,  // x position
-			cursor->y - size/2 - cursor->height/2, // y position
+			center_x,                              // x position
+			center_y,                              // y position
 			size, size,                            // width, height
 			4,                                     // border width
 			DefaultDepth(display, screen),         // depth
@@ -215,7 +221,6 @@ void draw(
 			DefaultVisual(display, screen),        // visual
 			CWOverrideRedirect,                    // valuemask
 			&window_attr);                         // attributes
-	}
 
 	// Make round shaped window.
 	XGCValues xgcv;
@@ -229,8 +234,8 @@ void draw(
 		size, size,   // Size
 		0, 360 * 64); // Make it a full circle
 
-	XShapeCombineMask(display, window, ShapeBounding, 0,0, shape_mask, ShapeSet);
-	XShapeCombineMask(display, window, ShapeClip, 0,0, shape_mask, ShapeSet);
+	XShapeCombineMask(display, window, ShapeBounding, 0, 0, shape_mask, ShapeSet);
+	XShapeCombineMask(display, window, ShapeClip,     0, 0, shape_mask, ShapeSet);
 	XFreePixmap(display, shape_mask);
 
 	// Input region is small so we can pass input events.
@@ -288,9 +293,10 @@ void draw(
 		color2.red   = 65535 - color.red;
 		color2.green = 65535 - color.green;
 		color2.blue  = 65535 - color.blue;
-		sprintf(color2_name,"#%04X%04X%04X", color2.red,color2.green, color2.blue);
+		sprintf(color2_name, "#%04X%04X%04X", color2.red, color2.green, color2.blue);
 		XAllocNamedColor(display, colormap, color2_name, &color2, &color2);
-	} else {
+	}
+	else {
 		// Set colour only once if not outline.
 		XSetLineAttributes(display, gc, line_width, LineSolid, CapButt, JoinBevel);
 		XSetForeground(display, gc, color.pixel);
@@ -299,15 +305,10 @@ void draw(
 	// Draw the circles
 	int i = 1;
 	for (i=1; i<=size; i+=distance) {
-		if (follow) {
+		if (follow)
 			XClearWindow(display, window);
-		}
 
-		int cs;
-		if (grow)
-			cs = i;
-		else
-			cs = size - i;
+		int cs = grow ? i : size - i;
 
 		if (outline) {
 			XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
@@ -328,10 +329,8 @@ void draw(
 			0, 360 * 64);                 // Make it a full circle
 
 		if (follow) {
-			XFixesCursorImage *cursor = XFixesGetCursorImage(display);
-			XMoveWindow(display, window,
-					cursor->x - size/2 - cursor->width/2,
-					cursor->y - size/2 - cursor->height/2);
+			cursor_center(display, size, &center_x, &center_y);
+			XMoveWindow(display, window, center_x, center_y);
 		}
 
 		XSync(display, False);
@@ -346,7 +345,7 @@ void draw(
 /*
  *  The MIT License (MIT)
  *
- *  Copyright © 2015-2017 Martin Tournoij
+ *  Copyright © 2015-2020 Martin Tournoij
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to

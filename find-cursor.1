@@ -50,11 +50,11 @@ Maximum size the circle will grow to.
 .TP
 \fB-t\fR, \fB--transparent\fR
 Make the window truly 'transparent'. This helps with some display issues when
-following the cursor position, but it doesn't work well with all WMs, which is
-why it's disabled by default.
+following the cursor position, but it doesn't work well with all window
+managers, which is why it's disabled by default.
 .TP
-\fB-w\fR, \fB--wait\fR \fI\,MICROSECONDS\/\fR
-Time to wait before drawing the next circle.
+\fB-w\fR, \fB--wait\fR \fI\,TIME\/\fR
+Time to wait before drawing the next circle, in tenths of milliseconds.
 .TP
 \fB-r\fR, \fB--repeat\fR \fI\,N\/\fR
 Number of times to repeat the animation. Use 0 to repeat indefinitely.
@@ -78,7 +78,7 @@ find-cursor --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16
 
 .PP
 You will want to map a key in your window manager to run \fIfind-cursor\fR. You
-can also use \fIxbindkeys\fR, which should work with $any window manager.
+can also use \fIxbindkeys\fR, which should work with any window manager.
 .PP
 I run it with \fIxcape\fR:
 .RS
