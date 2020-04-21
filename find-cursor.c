@@ -73,7 +73,7 @@ void usage(char *name) {
 	printf("  Draw a solid circle:\n");
 	printf("    %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
 	printf("  Always draw a full circle on top of the cursor:\n");
-	printf("    %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16\n", name);
+	printf("    %s --repeat 0 --follow --transparent --line-width 16 --size 16\n", name);
 }
 
 // Parse number from commandline, or show error and exit if it's not a number.
@@ -337,6 +337,23 @@ void draw(char *name, Display *display, int screen,
 
 		XSync(display, False);
 		usleep(wait * 100);
+	}
+
+	// No need to keep creating windows if follow is enabled, repeating
+	// indefinitely, and the line_width is the same as the size: just update
+	// the window position. Saves CPU cycles and gives a smoother
+	// experience.
+	//
+	// TODO: without --transparent the window becomes white after a while?
+	// Only optimize this case for now.
+	if (line_width == size && follow && transparent && repeat == -1) {
+		while (1) {
+			usleep(200 * 100);
+			cursor_center(display, size, &center_x, &center_y);
+			XMoveWindow(display, window, center_x, center_y);
+			XRaiseWindow(display, window);
+			XSync(display, False);
+		}
 	}
 
 	XFreeGC(display, gc);
