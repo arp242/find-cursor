@@ -179,6 +179,7 @@ void cursor_center(Display *display, int size, int *x, int *y) {
 	XFixesCursorImage *c = XFixesGetCursorImage(display);
 	*x = c->x - size/2 - c->width/2  + c->xhot;
 	*y = c->y - size/2 - c->height/2 + c->yhot;
+	XFree(c);
 }
 
 void draw(char *name, Display *display, int screen,
@@ -233,6 +234,7 @@ void draw(char *name, Display *display, int screen,
 		0, 0,         // x, y position
 		size, size,   // Size
 		0, 360 * 64); // Make it a full circle
+	XFreeGC(display, part_shape);
 
 	XShapeCombineMask(display, window, ShapeBounding, 0, 0, shape_mask, ShapeSet);
 	XShapeCombineMask(display, window, ShapeClip,     0, 0, shape_mask, ShapeSet);
