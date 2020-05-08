@@ -57,3 +57,25 @@ different options/flags.
 
 [xcape]: https://github.com/alols/xcape
 [xbindkeys]: http://www.nongnu.org/xbindkeys/xbindkeys.html
+
+Run in Docker
+-------------
+Build:
+```
+docker build --tag find-cursor --file ./Dockerfile .
+```
+
+Run with `docker`:
+```
+docker run --rm --detach --name=find-cursor \
+    --user="${UID}" --env "DISPLAY=${DISPLAY}" \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    find-cursor \
+    find-cursor --repeat 0 --follow --distance 1 --wait 120 --line-width 16 --size 16 --color red
+```
+
+Run with `docker-compose`:
+```
+export UID DISPLAY
+docker-compose up --detach
+```

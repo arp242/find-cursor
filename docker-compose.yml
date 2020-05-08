@@ -1,0 +1,11 @@
+version: '3'
+services:
+  find-cursor:
+    image: find-cursor:latest
+    container_name: find-cursor
+    user: "${UID}"
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    command: find-cursor --repeat 0 --follow --distance 1 --wait 120 --line-width 16 --size 16 --color red
