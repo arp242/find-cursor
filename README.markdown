@@ -45,6 +45,16 @@ manager to launch `find-cursor` with that.
 I don't have a numpad on my keyboard; you can also use `F13` or some other
 unused key.
 
+You can use a little wrapper script if you want a "toggle" switch for when
+repeating forever:
+
+    #!/bin/sh
+    if pgrep find-cursor; then
+        pkill find-cursor
+    else
+        find-cursor -r0 &
+    fi
+
 Compton
 -------
 
