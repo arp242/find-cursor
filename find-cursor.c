@@ -42,7 +42,8 @@ static struct option longopts[] = {
 };
 
 void usage(char *name) {
-	printf("Usage: %s [-stplcftgr]\n", name);
+	printf("find-cursor highlights the cursor position by drawing circles around it.\n");
+	printf("https://github.com/arp242/find-cursor\n");
 	printf("\n");
 	printf("Flags:\n");
 	printf("  -h, --help          Show this help.\n");
@@ -74,6 +75,19 @@ void usage(char *name) {
 	printf("    %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
 	printf("  Always draw a full circle on top of the cursor:\n");
 	printf("    %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16\n", name);
+	printf("\n");
+	printf("Launching:\n");
+	printf("  You will want to map a key in your window manager to run find-cursor.\n");
+	printf("  You can also use xbindkeys, which should work with any window manager.\n");
+	printf("\n");
+	printf("  I run it with xcape:\n");
+	printf("       xcape -e 'Control_L=Escape;Shift_L=KP_Add'\n");
+	printf("\n");
+	printf("  When Left Shift is tapped a Keypad Add is sent; I configured my window\n");
+	printf("  manager to launch find-cursor with that.\n");
+	printf("\n");
+	printf("  I don't have a numpad on my keyboard; you can also use F13 or some\n");
+	printf("  other unused key.\n");
 }
 
 // Parse number from commandline, or show error and exit if it's not a number.

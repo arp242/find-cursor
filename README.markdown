@@ -26,8 +26,7 @@ this is NOT maintained (or supported) by me. See #19.
 Usage
 -----
 
-See `find-cursor(1)` or `find-cursor -h` to see some options for controlling the
-appearance.
+See `find-cursor -h` to see some options for controlling the appearance.
 
 Launching
 ---------
