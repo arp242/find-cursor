@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <X11/Xlib.h>
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]) {
 	int distance = 40;
 	int wait = 400;
 	int line_width = 4;
-	char color_name[64] = "black";
+	char color_name[64] = "random";
 	int follow = 0;
 	int transparent = 0;
 	int grow = 0;
@@ -194,6 +195,23 @@ void cursor_center(Display *display, int size, int *x, int *y) {
 	*x = c->x - size/2 - c->width/2  + c->xhot;
 	*y = c->y - size/2 - c->height/2 + c->yhot;
 	XFree(c);
+}
+
+void alloc_color(
+	Display * display,
+	Colormap colormap,
+	const char* color_name,
+	XColor* color) {
+	if (strcmp(color_name, "random") != 0) {
+		XAllocNamedColor(display, colormap, color_name, color, color);
+	} else {
+		srand(time(NULL));
+		color->flags= DoRed | DoGreen | DoBlue;
+		color->red = rand() % UINT16_MAX;
+		color->green = rand() % UINT16_MAX;
+		color->blue = rand() % UINT16_MAX;
+		XAllocColor(display, colormap, color);
+	}
 }
 
 void draw(char *name, Display *display, int screen,
@@ -300,7 +318,7 @@ void draw(char *name, Display *display, int screen,
 
 	Colormap colormap = DefaultColormap(display, screen);
 	XColor color;
-	XAllocNamedColor(display, colormap, color_name, &color, &color);
+	alloc_color(display, colormap, color_name, &color);
 
 	XColor color2;
 	char color2_name[14]; // hash + 3x4-digit hex
@@ -327,7 +345,7 @@ void draw(char *name, Display *display, int screen,
 		int cs = grow ? i : size - i;
 
 		if (outline) {
-			XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
+			XSetLineAttributes(display, gc, line_width+6, LineSolid, CapButt, JoinBevel);
 			XSetForeground(display, gc, color2.pixel);
 			XDrawArc(display, window, gc,
 				size/2 - cs/2, size/2 - cs/2, // x, y position
