@@ -8,11 +8,8 @@ feature found in Windows XP (and possibly later?)
 Installation
 ------------
 
-Compile it by typing `make`, install it with `make install`. There are some
-packages:
-
-- [FreeBSD](https://www.freshports.org/x11/find-cursor/)
-- [Void Linux](https://github.com/void-linux/void-packages/tree/master/srcpkgs/find-cursor)
+Compile it by typing `make`, install it with `make install`. There
+[packages][pkg] for some platforms as well.
 
 You'll need to install some X11 header files on some systems; e.g. on
 Ubuntu/Debian: `libx11-dev`, `libxcomposite-dev`, `libxdamage-dev`, and
@@ -22,6 +19,7 @@ There is also a Docker container at [klo2k/find-cursor][d] if you want it. Note
 this is NOT maintained (or supported) by me. See #19.
 
 [d]: https://hub.docker.com/r/klo2k/find-cursor
+[pkg]: https://repology.org/project/find-cursor/versions
 
 Usage
 -----
@@ -36,7 +34,7 @@ also use [`xbindkeys`](xbindkeys), which should work with `$any` window manager.
 
 I run it with [`xcape`][xcape]:
 
-	xcape -e 'Control_L=Escape;Shift_L=KP_Add'
+    xcape -e 'Control_L=Escape;Shift_L=KP_Add'
 
 When `Left Shift` is tapped a `Keypad Add` is sent; I configured my window
 manager to launch `find-cursor` with that.
@@ -60,11 +58,11 @@ Compton
 You may want to disable shadows if you use compton or some other composite
 manager; for example for compton start it with:
 
-	compton --shadow-exclude "class_g = 'find-cursor'"
+    compton --shadow-exclude "class_g = 'find-cursor'"
 
 Or, perhaps even better, disable it for all shaped windows:
 
-	compton --shadow-exclude 'bounding_shaped'
+    compton --shadow-exclude 'bounding_shaped'
 
 You can also put that in the compton config file. Other managers might have
 different options/flags.

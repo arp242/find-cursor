@@ -24,7 +24,8 @@ void usage(char *name);
 int parse_num(int ch, char *opt, char *name);
 void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline, int repeat);
+	int follow, int transparent, int grow, int outline, char *ocolor_name,
+	int repeat);
 
 static struct option longopts[] = {
 	{"help",          no_argument,       NULL, 'h'},
@@ -36,8 +37,9 @@ static struct option longopts[] = {
 	{"follow",        no_argument,       NULL, 'f'},
 	{"transparent",   no_argument,       NULL, 't'},
 	{"grow",          no_argument,       NULL, 'g'},
-	{"outline",       no_argument,       NULL, 'o'},
+	{"outline",       optional_argument, NULL, 'o'}, // Optional for compat, as previously it was hard-coded to 2px.
 	{"repeat",        required_argument, NULL, 'r'},
+	{"outline-color", required_argument, NULL, 'O'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -63,8 +65,10 @@ void usage(char *name) {
 	printf("                      some display issues when following the cursor position,\n");
 	printf("                      but it doesn't work well with all WMs, which is why\n");
 	printf("                      it's disabled by default.\n");
-	printf("  -o, --outline       Draw an outline in the opposite color as well. Helps\n");
-	printf("                      visibility on all backgrounds.\n");
+	printf("  -o, --outline       Width in pixels of outline; uses 2px if no value is given.\n");
+	printf("                      Helps visibility on all backgrounds.\n");
+	printf("  -O, --outline-color Color of outline; if omitted it will automatically use\n");
+	printf("                      the opposite color. No effect if -o isn't set.\n");
 	printf("  -r, --repeat        Number of times to repeat the animation; use 0 to repeat\n");
 	printf("                      indefinitely.\n");
 	printf("\n");
@@ -95,7 +99,7 @@ int parse_num(int ch, char *opt, char *name) {
 	char *end;
 	long result = strtol(optarg, &end, 10);
 	if (*end) {
-		fprintf(stderr, "%s: %d must be a number\n", name, ch);
+		fprintf(stderr, "%s: %d must be a number\n\n", name, ch);
 		usage(name);
 		exit(1);
 	}
@@ -109,14 +113,16 @@ int main(int argc, char* argv[]) {
 	int wait = 400;
 	int line_width = 4;
 	char color_name[64] = "black";
+	char ocolor_name[64];
 	int follow = 0;
 	int transparent = 0;
 	int grow = 0;
 	int outline = 0;
 	int repeat = 0;
 
+	extern int optopt;
 	int ch;
-	while ((ch = getopt_long(argc, argv, "hs:d:w:l:c:r:ftgo", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, ":hs:d:w:l:c:r:ftgo:O:", longopts, NULL)) != -1)
 		switch (ch) {
 		case 's':
 			size = parse_num(ch, optarg, argv[0]);
@@ -146,13 +152,30 @@ int main(int argc, char* argv[]) {
 			grow = 1;
 			break;
 		case 'o':
-			outline = 1;
+			outline = parse_num(ch, optarg, argv[0]);
+			break;
+		case 'O':
+			strncpy(ocolor_name, optarg, sizeof(ocolor_name));
 			break;
 		case 'r':
 			repeat = parse_num(ch, optarg, argv[0]);
 			if (repeat == 0)
 				repeat = -1;
 			break;
+		case ':':
+			switch (optopt) {
+			case 'o':
+				outline = 2;
+				break;
+			default:
+			    fprintf(stderr, "%s: missing required argument for -%c\n\n", argv[0], optopt);
+			    usage(argv[0]);
+			    exit(1);
+			}
+			break;
+		case '?':
+			fprintf(stderr, "%s: invalid option: -%c\n\n", argv[0], ch);
+			// fallthrough
 		default:
 			usage(argv[0]);
 			exit(1);
@@ -161,20 +184,20 @@ int main(int argc, char* argv[]) {
 	// Setup display and such
 	char *display_name = getenv("DISPLAY");
 	if (!display_name) {
-		fprintf(stderr, "%s: DISPLAY not set\n", argv[0]);
+		fprintf(stderr, "%s: DISPLAY not set\n\n", argv[0]);
 		exit(1);
 	}
 
 	Display *display = XOpenDisplay(display_name);
 	if (!display) {
-		fprintf(stderr, "%s: cannot open display '%s'\n", argv[0], display_name);
+		fprintf(stderr, "%s: cannot open display '%s'\n\n", argv[0], display_name);
 		exit(1);
 	}
 	int screen = DefaultScreen(display);
 
 	int shape_event_base, shape_error_base;
 	if (!XShapeQueryExtension(display, &shape_event_base, &shape_error_base)) {
-		fprintf(stderr, "%s: no XShape extension for display '%s'\n", argv[0], display_name);
+		fprintf(stderr, "%s: no XShape extension for display '%s'\n\n", argv[0], display_name);
 		exit(1);
 	}
 
@@ -182,7 +205,8 @@ int main(int argc, char* argv[]) {
 	do
 		draw(argv[0], display, screen,
 			size, distance, wait, line_width, color_name,
-			follow, transparent, grow, outline, repeat);
+			follow, transparent, grow, outline, ocolor_name,
+			repeat);
 	while (repeat == -1 || repeat--);
 
 	XCloseDisplay(display);
@@ -198,7 +222,8 @@ void cursor_center(Display *display, int size, int *x, int *y) {
 
 void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline, int repeat
+	int follow, int transparent, int grow, int outline, char *ocolor_name,
+	int repeat
 ) {
 	// Get the mouse cursor position and size.
 	int center_x, center_y;
@@ -298,19 +323,30 @@ void draw(char *name, Display *display, int screen,
 	unsigned long valuemask = 0;
 	GC gc = XCreateGC(display, window, valuemask, &values);
 
+	// Get colours.
 	Colormap colormap = DefaultColormap(display, screen);
 	XColor color;
-	XAllocNamedColor(display, colormap, color_name, &color, &color);
+	int err = XAllocNamedColor(display, colormap, color_name, &color, &color);
+	if (err == 0) {
+		fprintf(stderr, "%s: invalid color value for -c/--color: '%s'\n\n", name, color_name);
+		usage(name);
+		exit(1);
+	}
 
 	XColor color2;
-	char color2_name[14]; // hash + 3x4-digit hex
-	if (outline) {
-		// Insert and convert to XColor.
-		color2.red   = 65535 - color.red;
-		color2.green = 65535 - color.green;
-		color2.blue  = 65535 - color.blue;
-		sprintf(color2_name, "#%04X%04X%04X", color2.red, color2.green, color2.blue);
-		XAllocNamedColor(display, colormap, color2_name, &color2, &color2);
+	if (outline > 0) {
+		if (ocolor_name[0] == 0) { // Use opposite colour.
+			color2.red   = 65535 - color.red;
+			color2.green = 65535 - color.green;
+			color2.blue  = 65535 - color.blue;
+			sprintf(ocolor_name, "#%04X%04X%04X", color2.red, color2.green, color2.blue);
+		}
+		int err = XAllocNamedColor(display, colormap, ocolor_name, &color2, &color2);
+		if (err == 0) {
+			fprintf(stderr, "%s: invalid color value for -O/--outline-color: '%s'\n\n", name, ocolor_name);
+			usage(name);
+			exit(1);
+		}
 	}
 	else {
 		// Set colour only once if not outline.
@@ -326,8 +362,8 @@ void draw(char *name, Display *display, int screen,
 
 		int cs = grow ? i : size - i;
 
-		if (outline) {
-			XSetLineAttributes(display, gc, line_width+2, LineSolid, CapButt, JoinBevel);
+		if (outline > 0) {
+			XSetLineAttributes(display, gc, line_width+outline, LineSolid, CapButt, JoinBevel);
 			XSetForeground(display, gc, color2.pixel);
 			XDrawArc(display, window, gc,
 				size/2 - cs/2, size/2 - cs/2, // x, y position
