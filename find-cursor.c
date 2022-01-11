@@ -1,10 +1,10 @@
 /*
  * http://code.arp242.net/find-cursor
- * Copyright © 2015-2020 Martin Tournoij <martin@arp242.net>
+ * Copyright © Martin Tournoij <martin@arp242.net>
  * See below for full copyright
  */
 
-#define _XOPEN_SOURCE 500
+#define _DEFAULT_SOURCE
 
 #include <getopt.h>
 #include <stdint.h>
@@ -25,8 +25,7 @@ int parse_num(int ch, char *opt, char *name);
 int pointer_screen(char *name, Display *display);
 void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline, char *ocolor_name,
-	int repeat);
+	int follow, int transparent, int grow, int outline, char *ocolor_name);
 
 static struct option longopts[] = {
 	{"help",          no_argument,       NULL, 'h'},
@@ -45,62 +44,64 @@ static struct option longopts[] = {
 };
 
 void usage(char *name) {
-	printf("find-cursor highlights the cursor position by drawing circles around it.\n");
-	printf("https://github.com/arp242/find-cursor\n");
-	printf("\n");
-	printf("Flags:\n");
-	printf("  -h, --help          Show this help.\n");
-	printf("\n");
-	printf("Shape options:\n");
-	printf("  -s, --size          Maximum size the circle will grow to in pixels.\n");
-	printf("  -d, --distance      Distance between the circles in pixels.\n");
-	printf("  -l, --line-width    Width of the lines in pixels.\n");
-	printf("  -w, --wait          Time to wait before drawing the next circle in\n");
-	printf("                      tenths of milliseconds.\n");
-	printf("  -c, --color         Color as X11 color name or RGB (e.g. #ff0000)\n");
-	printf("  -g, --grow          Grow the animation in size, rather than shrinking it.\n");
-	printf("\n");
-	printf("Extra options:\n");
-	printf("  -f, --follow        Follow the cursor position as the cursor is moving.\n");
-	printf("  -t, --transparent   Make the window truly 'transparent'. This helps with\n");
-	printf("                      some display issues when following the cursor position,\n");
-	printf("                      but it doesn't work well with all WMs, which is why\n");
-	printf("                      it's disabled by default.\n");
-	printf("  -o, --outline       Width in pixels of outline; uses 2px if no value is given.\n");
-	printf("                      Helps visibility on all backgrounds.\n");
-	printf("  -O, --outline-color Color of outline; if omitted it will automatically use\n");
-	printf("                      the opposite color. No effect if -o isn't set.\n");
-	printf("  -r, --repeat        Number of times to repeat the animation; use 0 to repeat\n");
-	printf("                      indefinitely.\n");
-	printf("\n");
-	printf("Examples:\n");
-	printf("  The defaults:\n");
-	printf("    %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n", name);
-	printf("  Draw a solid circle:\n");
-	printf("    %s --size 100 --distance 1 --wait 20 --line-width 1\n\n", name);
-	printf("  Always draw a full circle on top of the cursor:\n");
-	printf("    %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16\n", name);
-	printf("\n");
-	printf("Launching:\n");
-	printf("  You will want to map a key in your window manager to run find-cursor.\n");
-	printf("  You can also use xbindkeys, which should work with any window manager.\n");
-	printf("\n");
-	printf("  I run it with xcape:\n");
-	printf("       xcape -e 'Control_L=Escape;Shift_L=KP_Add'\n");
-	printf("\n");
-	printf("  When Left Shift is tapped a Keypad Add is sent; I configured my window\n");
-	printf("  manager to launch find-cursor with that.\n");
-	printf("\n");
-	printf("  I don't have a numpad on my keyboard; you can also use F13 or some\n");
-	printf("  other unused key.\n");
+	printf(""
+	"find-cursor highlights the cursor position by drawing circles around it.\n"
+	"https://github.com/arp242/find-cursor\n"
+	"\n"
+	"Flags:\n"
+	"  -h, --help          Show this help.\n"
+	"\n"
+	"Shape options:\n"
+	"  -s, --size          Maximum size the circle will grow to in pixels.\n"
+	"  -d, --distance      Distance between the circles in pixels.\n"
+	"  -l, --line-width    Width of the lines in pixels.\n"
+	"  -w, --wait          Time to wait before drawing the next circle in\n"
+	"                      tenths of milliseconds.\n"
+	"  -c, --color         Color as X11 color name or RGB (e.g. #ff0000)\n"
+	"  -g, --grow          Grow the animation in size, rather than shrinking it.\n"
+	"\n"
+	"Extra options:\n"
+	"  -f, --follow        Follow the cursor position as the cursor is moving.\n"
+	"  -t, --transparent   Make the window truly 'transparent'. This helps with\n"
+	"                      some display issues when following the cursor position,\n"
+	"                      but it doesn't work well with all WMs, which is why\n"
+	"                      it's disabled by default.\n"
+	"  -o, --outline       Width in pixels of outline; uses 2px if no value is given.\n"
+	"                      Helps visibility on all backgrounds.\n"
+	"  -O, --outline-color Color of outline; if omitted it will automatically use\n"
+	"                      the opposite color. No effect if -o isn't set.\n"
+	"  -r, --repeat        Number of times to repeat the animation; use 0 to repeat\n"
+	"                      indefinitely.\n"
+	"\n"
+	"Examples:\n"
+	"  The defaults:\n"
+	"    %s --size 320 --distance 40 --wait 400 --line-width 4 --color black\n\n"
+	"  Draw a solid circle:\n"
+	"    %s --size 100 --distance 1 --wait 20 --line-width 1\n\n"
+	"  Always draw a full circle on top of the cursor:\n"
+	"    %s --repeat 0 --follow --distance 1 --wait 1 --line-width 16 --size 16\n"
+	"\n"
+	"Launching:\n"
+	"  You will want to map a key in your window manager to run find-cursor.\n"
+	"  You can also use xbindkeys, which should work with any window manager.\n"
+	"\n"
+	"  I run it with xcape:\n"
+	"       xcape -e 'Control_L=Escape;Shift_L=KP_Add'\n"
+	"\n"
+	"  When Left Shift is tapped a Keypad Add is sent; I configured my window\n"
+	"  manager to launch find-cursor with that.\n"
+	"\n"
+	"  I don't have a numpad on my keyboard; you can also use F13 or some\n"
+	"  other unused key.\n",
+	name, name, name);
 }
 
 // Parse number from commandline, or show error and exit if it's not a number.
 int parse_num(int ch, char *opt, char *name) {
 	char *end;
-	long result = strtol(optarg, &end, 10);
+	long result = strtol(opt, &end, 10);
 	if (*end) {
-		fprintf(stderr, "%s: %d must be a number\n\n", name, ch);
+		fprintf(stderr, "%s: value for -%c must be a number\n\n", name, ch);
 		usage(name);
 		exit(1);
 	}
@@ -205,37 +206,31 @@ int main(int argc, char* argv[]) {
 	do
 		draw(argv[0], display, pointer_screen(argv[0], display),
 			size, distance, wait, line_width, color_name,
-			follow, transparent, grow, outline, ocolor_name,
-			repeat);
+			follow, transparent, grow, outline, ocolor_name);
 	while (repeat == -1 || repeat--);
 
 	XCloseDisplay(display);
 }
 
-// On multiscreen systems, identify which one the cursor is on
+// Identify which screen the cursor is on.
 int pointer_screen(char *name, Display *display) {
 	int screencount = ScreenCount(display);
 
 	// The traditional case
-	if (screencount == 1) {
+	if (screencount == 1)
 		return DefaultScreen(display);
-	}
 
 	// Multihead
 	for (int s=0; s < screencount; s++) {
-		int x = 0, y = 0;
-		Window window = 0;
-		Window root = 0;
-		int dummy_int = 0;
-		unsigned int dummy_uint = 0;
-		Screen *screen = ScreenOfDisplay(display, s);
+		Window root, win;
+		int unused           = 0;
+		unsigned int unusedu = 0;
+		Screen *screen       = ScreenOfDisplay(display, s);
 
 		int found = XQueryPointer(display, RootWindowOfScreen(screen),
-			&root, &window,
-			&x, &y, &dummy_int, &dummy_int, &dummy_uint);
-		if (found) {
+			&root, &win, &unused, &unused, &unused, &unused, &unusedu);
+		if (found)
 			return s;
-		}
 	}
 
 	// Fall through (should never happen)
@@ -253,8 +248,7 @@ void cursor_center(Display *display, int size, int *x, int *y) {
 
 void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
-	int follow, int transparent, int grow, int outline, char *ocolor_name,
-	int repeat
+	int follow, int transparent, int grow, int outline, char *ocolor_name
 ) {
 	// Get the mouse cursor position and size.
 	int center_x, center_y;
@@ -425,26 +419,24 @@ void draw(char *name, Display *display, int screen,
 }
 
 
-/*
- *  The MIT License (MIT)
+/* The MIT License (MIT)
  *
- *  Copyright © 2015-2020 Martin Tournoij
+ * Copyright © Martin Tournoij
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to
- *  deal in the Software without restriction, including without limitation the
- *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- *  sell copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- *  The software is provided "as is", without warranty of any kind, express or
- *  implied, including but not limited to the warranties of merchantability,
- *  fitness for a particular purpose and noninfringement. In no event shall the
- *  authors or copyright holders be liable for any claim, damages or other
- *  liability, whether in an action of contract, tort or otherwise, arising
- *  from, out of or in connection with the software or the use or other dealings
- *  in the software.
- */
+ * The software is provided "as is", without warranty of any kind, express or
+ * implied, including but not limited to the warranties of merchantability,
+ * fitness for a particular purpose and noninfringement. In no event shall the
+ * authors or copyright holders be liable for any claim, damages or other
+ * liability, whether in an action of contract, tort or otherwise, arising
+ * from, out of or in connection with the software or the use or other dealings
+ * in the software. */

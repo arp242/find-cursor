@@ -1,9 +1,20 @@
-CC?=cc
-CFLAGS?=-std=c99 -pedantic -Wall -Os
-PREFIX?=/usr/local
+CC      ?= cc
+PREFIX  ?= /usr/local
+NAME    ?= find-cursor
+
+CFLAGS  += -std=c99 -pedantic -Wall -Wextra -Wpedantic -Os
+LDFLAGS += -L/usr/lib -lX11 -lXext -lXfixes
+
+.PHONY: all clean install uninstall
 
 all:
-	${CC} ${CFLAGS} ${LDFLAGS} -o find-cursor find-cursor.c -lX11 -lXext -lXfixes
+	${CC} ${CFLAGS} ${LDFLAGS} -o ${NAME} *.c
+
+clean:
+	rm -f ${NAME}
 
 install:
-	install -Dm755 find-cursor $(DESTDIR)$(PREFIX)/bin/find-cursor
+	install -Dm755 ${NAME} ${DESTDIR}${PREFIX}/bin/${NAME}
+
+uninstall:
+	rm -f ${DESTDIR}${PREFIX}/bin/${NAME}
