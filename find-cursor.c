@@ -22,6 +22,7 @@
 
 void usage(char *name);
 int parse_num(int ch, char *opt, char *name);
+int pointer_screen(char *name, Display *display);
 void draw(char *name, Display *display, int screen,
 	int size, int distance, int wait, int line_width, char *color_name,
 	int follow, int transparent, int grow, int outline, char *ocolor_name,
@@ -193,7 +194,6 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "%s: cannot open display '%s'\n\n", argv[0], display_name);
 		exit(1);
 	}
-	int screen = DefaultScreen(display);
 
 	int shape_event_base, shape_error_base;
 	if (!XShapeQueryExtension(display, &shape_event_base, &shape_error_base)) {
@@ -203,13 +203,44 @@ int main(int argc, char* argv[]) {
 
 	// Actually draw.
 	do
-		draw(argv[0], display, screen,
+		draw(argv[0], display, pointer_screen(argv[0], display),
 			size, distance, wait, line_width, color_name,
 			follow, transparent, grow, outline, ocolor_name,
 			repeat);
 	while (repeat == -1 || repeat--);
 
 	XCloseDisplay(display);
+}
+
+// On multiscreen systems, identify which one the cursor is on
+int pointer_screen(char *name, Display *display) {
+	int screencount = ScreenCount(display);
+
+	// The traditional case
+	if (screencount == 1) {
+		return DefaultScreen(display);
+	}
+
+	// Multihead
+	for (int s=0; s < screencount; s++) {
+		int x = 0, y = 0;
+		Window window = 0;
+		Window root = 0;
+		int dummy_int = 0;
+		unsigned int dummy_uint = 0;
+		Screen *screen = ScreenOfDisplay(display, s);
+
+		int found = XQueryPointer(display, RootWindowOfScreen(screen),
+			&root, &window,
+			&x, &y, &dummy_int, &dummy_int, &dummy_uint);
+		if (found) {
+			return s;
+		}
+	}
+
+	// Fall through (should never happen)
+	fprintf(stderr, "%s: Unable to identify pointer screen, using Default\n", name);
+	return DefaultScreen(display);
 }
 
 // Try to get the centre of the cursor.
