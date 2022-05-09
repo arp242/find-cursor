@@ -11,7 +11,8 @@ Compile it by typing `make`, install it with `make install`. There
 
 You'll need to install some X11 header files on some systems; e.g. on
 Ubuntu/Debian: `libx11-dev`, `libxcomposite-dev`, `libxdamage-dev`, and
-`libxrender-dev`.
+`libxrender-dev`. For Fedora 36 you might need to install following:
+`libXext-devel`, `libXdamage-devel`, `libXrender-devel`, `libXext-devel`.
 
 There is also a Docker container at [klo2k/find-cursor][d] if you want it. Note
 this is NOT maintained (or supported) by me. See #19.
