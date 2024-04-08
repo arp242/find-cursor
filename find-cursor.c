@@ -259,10 +259,12 @@ void draw(char *name, Display *display, int screen,
 	XSetWindowAttributes window_attr;
 	window_attr.override_redirect = 1;
 
+	Colormap colormap = DefaultColormap(display, screen);
 	if (transparent) {
 		XVisualInfo vinfo;
 		XMatchVisualInfo(display, screen, 32, TrueColor, &vinfo);
 		window_attr.colormap = XCreateColormap(display, DefaultRootWindow(display), vinfo.visual, AllocNone);
+		colormap = window_attr.colormap;
 		window_attr.background_pixel = 0;
 		window = XCreateWindow(display, XRootWindow(display, screen),
 			center_x,                               // x position
@@ -349,7 +351,6 @@ void draw(char *name, Display *display, int screen,
 	GC gc = XCreateGC(display, window, valuemask, &values);
 
 	// Get colours.
-	Colormap colormap = DefaultColormap(display, screen);
 	XColor color;
 	int err = XAllocNamedColor(display, colormap, color_name, &color, &color);
 	if (err == 0) {
